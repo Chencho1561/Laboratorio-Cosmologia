@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.integrate import quad
 
 
-# Definimos las función distancia por luminosidad, con parametros de entrada un vector con distintos z, w_0, w_a, Omega_M.
+# Definimos la función distancia por luminosidad, con parametros de entrada un vector con distintos z, w_0, w_a, Omega_M.
 def H0_dl(z, w_0, w_a, Omega_M=0.334):
     Omega_DE = 1 - Omega_M
 
@@ -25,7 +25,7 @@ def H0_dl_vec(z, w_0, w_a, Omega_M=0.334):
     return H0_dl_vectorizada(z, w_0, w_a, Omega_M)
 
 
-# Dibujamos la distnacia por luminosidad para w_0=-1 y w_a=-5,0,5 en el rango z=(0,1)
+# Dibujamos la distancia por luminosidad para w_0=-1 y w_a=-5,0,5 en el rango z=(0,1)
 z = np.linspace(0, 1, 100)
 w_a = [-5, 0, 5]
 fig, ax = plt.subplots(1, figsize=(15, 10))
@@ -45,7 +45,8 @@ ax.axes.yaxis.set_label_text("Distancia por luminosidad [" r"$H_0$" "Km]")
 fig.suptitle(
     "Distancia por Luminosidad en modelo " + r"$w_0=-1$", fontsize=20, fontweight="bold"
 )
-plt.show()
+# plt.show()
+plt.close(fig)
 
 # Calculamos el valor para z=0.2, w_0=-1 y w_a=5
 print("El valor de H_0 d_L es: ", H0_dl(0.2, -1, 5))
@@ -57,5 +58,31 @@ def mu_th(z, h, w_0, w_a, Omega_M=0.334):
     return 5 * np.log10(H0_dl_vec(z, w_0, w_a, Omega_M) * H0_1) + 25
 
 
+def mu_th_vec(z, h, w_0, w_a, Omega_M=0.334):
+    mu_th_vectorizada = np.vectorize(mu_th)
+    return mu_th_vectorizada(z, h, w_0, w_a, Omega_M)
+
+
 # Calculamos el valor para z=0.2, h=0.7 w_0=-1 y w_a=5
 print("El valor de mu_th es: ", mu_th(0.2, 0.7, -1, 5))
+
+# Cargamos los datos PantheonSHOES con su matriz de covarianza
+zobs, muobs = np.loadtxt("PantheonSH0ES_unique_data.txt", skiprows=1, unpack=True)
+cov = np.loadtxt("PantheonSH0ES_unique_cov.gz")
+
+
+# Definimos nuestro likelihood mediante la función chi-cuadrado asociada.
+def chi_cuad(h, w_0, w_a, Omega_M=0.334):
+    # Definimos el vector de diferencias
+    delta = muobs - mu_th_vec(z=zobs, h=h, w_0=w_0, w_a=w_a, Omega_M=Omega_M)
+    # Devolvemos chi cuadrado
+    return np.dot(np.transpose(delta), np.dot(np.linalg.inv(cov), delta))
+
+
+def chi_cuad_vec(h, w_0, w_a, Omega_M=0.334):
+    chi_cuad_vectorizada = np.vectorize(chi_cuad)
+    return chi_cuad_vectorizada(h, w_0, w_a, Omega_M=0.334)
+
+
+# Calculamos el valor para h=0.65, w_0=-1 y w_a=5.
+print("El valor de chi_cuadrado es: ", chi_cuad_vec(0.65, -1, 5))
