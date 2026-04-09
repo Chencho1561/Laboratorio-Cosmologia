@@ -40,13 +40,15 @@ ax.legend(loc=2, fontsize=16)
 x_min, x_max, y_min, y_max = ax.axis("tight")
 ax.axis([x_min, x_max, y_min, y_max])
 
-ax.axes.xaxis.set_label_text("Redshift [km]")
-ax.axes.yaxis.set_label_text("Distancia por luminosidad [" r"$H_0$" "Km]")
+ax.axes.xaxis.set_label_text("Redshift " + r"$z$")
+ax.axes.yaxis.set_label_text(r"$(H_0/c)\, d_L$")
 
 fig.suptitle(
     "Distancia por Luminosidad en modelo " + r"$w_0=-1$", fontsize=20, fontweight="bold"
 )
 # plt.show()
+fig.savefig("distancia_luminosidad.pdf")
+fig.savefig("distancia_luminosidad.png")
 plt.close(fig)
 
 # Calculamos el valor para z=0.2, w_0=-1 y w_a=5
@@ -101,7 +103,7 @@ Omega_M = 0.334
 
 # Minimizamos chi_cuad para ajustar nuestros datos con el likelihood
 def chi_cuad_min_w_0(w_0):
-    return chi_cuad(H_0 / 100, w_0, w_a, Omega_M)
+    return chi_cuad_vec(H_0 / 100, w_0, w_a, Omega_M)
 
 
 # Representamos la función para identificar el mínimo
@@ -109,10 +111,9 @@ fig, ax = plt.subplots(1, figsize=(10, 8))
 ax.grid(True)
 
 w = np.linspace(-3, 1, 100)
-chi2_vals = np.array([chi_cuad_min_w_0(wi) for wi in w])
+chi2_vals = chi_cuad_min_w_0(w)
 ax.plot(w, chi2_vals, "-", color="red")
 
-ax.legend(loc=2, fontsize=16)
 x_min, x_max, y_min, y_max = ax.axis("tight")
 ax.axis([x_min, x_max, y_min, y_max])
 
@@ -122,14 +123,16 @@ ax.axes.yaxis.set_label_text("Estimador estadístico " + r"$\chi^2$")
 fig.suptitle(
     "Parámetro " + r"$\omega_0$" + " en modelo wCDM", fontsize=20, fontweight="bold"
 )
-plt.show()
-# plt.close(fig)
+# plt.show()
+plt.close(fig)
 
 # Ahora, minimizamos la función con el modulo scipy.optimize, utilizando como punto inicial w_0=-1
 minimo_1 = minimize(chi_cuad_min_w_0, x0=-1)
 w_min = minimo_1.x[0]
 chi_cuad_minimo = chi_cuad_min_w_0(w_min)
-print(f"Mínimo encontrado en:\n   w_0 = {w_min:.4f} con chi^2 = {chi_cuad_minimo:.4f}")
+print(
+    f"Mínimo para wCDM encontrado en:\n   w_0 = {w_min:.4f} con chi^2 = {chi_cuad_minimo:.4f}"
+)
 
 # Calculamos los errores a una sigma por la derecha y por la izquierda
 # Definimos los Delta chi-cuadrado para cada sigma teniendo en cuenta que tenemos un único parámetro, es decir, sigma_n->Delta chi-cuadrado=n^2
@@ -157,7 +160,7 @@ fig, ax = plt.subplots(1, figsize=(10, 8))
 ax.grid(True)
 
 w = np.linspace(-1.5, -0.5, 100)
-chi2_vals = np.array([chi_cuad_min_w_0(wi) for wi in w])
+chi2_vals = chi_cuad_min_w_0(w)
 ax.plot(w, chi2_vals, "-", color="red")
 plt.axvline(w_min, color="black", label=r"$\omega_0$ ajustado")
 for i in range(3):
@@ -179,4 +182,68 @@ fig.suptitle(
     "Parámetro " + r"$\omega_0$" + " en modelo wCDM", fontsize=20, fontweight="bold"
 )
 plt.show()
+fig.savefig("w_0_wCMD.pdf")
+fig.savefig("w_0_wCMD.png")
 # plt.close(fig)
+
+
+# Comparamos nuestros resultados con el valor obtenido por Planck en el 2018, al que consideramos como valor teórico (w_0_Planck=-1.028 ± 0.032). Observando una clara compatibilidad con nuestros resultados, ya que para todos los sigmas los intervalos de incertidumbre se solapan, podemos estudiar el error o desviación cometido.
+def error(theo, exp):
+    return (abs(exp - theo)) * 100 / abs(theo)
+
+
+w_0_Planck = -1.028
+print(
+    f"El error relativo cometido en nuestro análisis es del {error(theo=w_0_Planck, exp=w_min):.4f}%."
+)
+
+# Representamos el modulo de la distancia en función de z para el valor ajustado de w_0 y el valor teórico de Planck, junto con los datos observados.
+fig, ax = plt.subplots(1, figsize=(10, 8))
+ax.grid(True)
+
+z = np.linspace(min(zobs), max(zobs), 100)
+modulo_ajustado = mu_th_vec(z, H_0 / 100, w_min, w_a, Omega_M)
+modulo_Planck = mu_th_vec(z, H_0 / 100, w_0_Planck, w_a, Omega_M)
+
+# Error para datos experimentales
+sigmaobs = np.sqrt(np.diag(v=cov))
+
+ax.errorbar(
+    zobs, muobs, yerr=sigmaobs, fmt="o", color="black", label="Datos experimentales"
+)
+ax.plot(z, modulo_ajustado, "-", color="red", label=r"Modelo teórico ajustado")
+ax.plot(z, modulo_Planck, "-", color="blue", label=r"Modelo con Planck")
+
+ax.legend(loc=2, fontsize=16)
+x_min, x_max, y_min, y_max = ax.axis("tight")
+ax.axis([x_min, x_max, y_min, y_max])
+ax.axes.xaxis.set_label_text("Redshift " + r"$z$")
+ax.axes.yaxis.set_label_text("Módulo de distancia " + r"$\mu$")
+fig.suptitle(
+    "Modulo de distancia en función de el redshift" + r"$\mu(z)$",
+    fontsize=20,
+    fontweight="bold",
+)
+plt.show()
+fig.savefig("Modelos_wCMD.pdf")
+fig.savefig("Modelos_wCMD.png")
+# plt.close(fig)
+
+# Utilizando el valor que mejor ajusta nuestros datos para w_0 calculamos la distancia por luminosidad y la distancia comovil a una supernova con z=0.4.
+
+
+# Definimos el factor de escala
+def a(z):
+    return 1 / (1 + z)
+
+
+def a_vec(z):
+    a_vectorizada = np.vectorize(a)
+    return a_vectorizada(z)
+
+
+h = H_0 / 100
+d_L = H0_dl(0.4, w_min, w_a, Omega_M) * (2997.9 / h)
+d_C = d_L * a(0.4)
+print(f"Distancia por luminosidad: {d_L:.4f} Mpc.")
+print(f"Distancia comóvil: {d_C:.4f} Mpc.")
