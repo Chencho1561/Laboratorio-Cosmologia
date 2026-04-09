@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from scipy.integrate import quad
+from scipy.optimize import minimize, fsolve
 
 
 # Definimos la función distancia por luminosidad, con parametros de entrada un vector con distintos z, w_0, w_a, Omega_M.
@@ -72,11 +73,14 @@ cov = np.loadtxt("PantheonSH0ES_unique_cov.gz")
 
 
 # Definimos nuestro likelihood mediante la función chi-cuadrado asociada.
+cov_inv = np.linalg.inv(cov)
+
+
 def chi_cuad(h, w_0, w_a, Omega_M=0.334):
     # Definimos el vector de diferencias
     delta = muobs - mu_th_vec(z=zobs, h=h, w_0=w_0, w_a=w_a, Omega_M=Omega_M)
     # Devolvemos chi cuadrado
-    return np.dot(np.transpose(delta), np.dot(np.linalg.inv(cov), delta))
+    return np.dot(np.transpose(delta), np.dot(cov_inv, delta))
 
 
 def chi_cuad_vec(h, w_0, w_a, Omega_M=0.334):
@@ -86,3 +90,93 @@ def chi_cuad_vec(h, w_0, w_a, Omega_M=0.334):
 
 # Calculamos el valor para h=0.65, w_0=-1 y w_a=5.
 print("El valor de chi_cuadrado es: ", chi_cuad_vec(0.65, -1, 5))
+
+# AJUSTE PARA LA ECUACIÓN DE ESTADO PARA LA ENERGÍA OSCURA
+
+# Obtención de w_0 para un modelo con h, w_a y Omega_M fijos (Modelo wCDM).
+H_0 = 73.04
+w_a = 0
+Omega_M = 0.334
+
+
+# Minimizamos chi_cuad para ajustar nuestros datos con el likelihood
+def chi_cuad_min_w_0(w_0):
+    return chi_cuad(H_0 / 100, w_0, w_a, Omega_M)
+
+
+# Representamos la función para identificar el mínimo
+fig, ax = plt.subplots(1, figsize=(10, 8))
+ax.grid(True)
+
+w = np.linspace(-3, 1, 100)
+chi2_vals = np.array([chi_cuad_min_w_0(wi) for wi in w])
+ax.plot(w, chi2_vals, "-", color="red")
+
+ax.legend(loc=2, fontsize=16)
+x_min, x_max, y_min, y_max = ax.axis("tight")
+ax.axis([x_min, x_max, y_min, y_max])
+
+ax.axes.xaxis.set_label_text("Parámetro " + r"$\omega_0$")
+ax.axes.yaxis.set_label_text("Estimador estadístico " + r"$\chi^2$")
+
+fig.suptitle(
+    "Parámetro " + r"$\omega_0$" + " en modelo wCDM", fontsize=20, fontweight="bold"
+)
+plt.show()
+# plt.close(fig)
+
+# Ahora, minimizamos la función con el modulo scipy.optimize, utilizando como punto inicial w_0=-1
+minimo_1 = minimize(chi_cuad_min_w_0, x0=-1)
+w_min = minimo_1.x[0]
+chi_cuad_minimo = chi_cuad_min_w_0(w_min)
+print(f"Mínimo encontrado en:\n   w_0 = {w_min:.4f} con chi^2 = {chi_cuad_minimo:.4f}")
+
+# Calculamos los errores a una sigma por la derecha y por la izquierda
+# Definimos los Delta chi-cuadrado para cada sigma teniendo en cuenta que tenemos un único parámetro, es decir, sigma_n->Delta chi-cuadrado=n^2
+delta_chi_1 = np.arange(1, 4) ** 2
+confianza = [68.27, 95.45, 99.73]
+colors = ["red", "blue", "orange"]
+
+# Calculamos los intervalos a distintos sigmas
+w_l = [0, 0, 0]
+w_r = [0, 0, 0]
+for i in range(3):
+    delta_chi = delta_chi_1[i]
+    probabilidad = confianza[i]
+    f = lambda w_0: chi_cuad_min_w_0(w_0) - chi_cuad_minimo - delta_chi
+    w_left = fsolve(f, x0=w_min - 0.5)[0]
+    w_right = fsolve(f, x0=w_min + 0.5)[0]
+    print(
+        f"Intervalo para sigma {i + 1} ({probabilidad} %): w en [{w_left:.4f}, {w_right:.4f}]"
+    )
+    w_l[i] = w_left
+    w_r[i] = w_right
+
+# Visualizamos los distintos intervalos
+fig, ax = plt.subplots(1, figsize=(10, 8))
+ax.grid(True)
+
+w = np.linspace(-1.5, -0.5, 100)
+chi2_vals = np.array([chi_cuad_min_w_0(wi) for wi in w])
+ax.plot(w, chi2_vals, "-", color="red")
+plt.axvline(w_min, color="black", label=r"$\omega_0$ ajustado")
+for i in range(3):
+    plt.axvline(
+        x=w_l[i],
+        linestyle="dashed",
+        color=colors[i],
+        label=f"$\\sigma_{i + 1}$",
+    )
+    plt.axvline(x=w_r[i], linestyle="dashed", color=colors[i])
+ax.legend(loc=2, fontsize=16)
+x_min, x_max, y_min, y_max = ax.axis("tight")
+ax.axis([x_min, x_max, y_min, y_max])
+
+ax.axes.xaxis.set_label_text("Parámetro " + r"$\omega_0$")
+ax.axes.yaxis.set_label_text("Estimador estadístico " + r"$\chi^2$")
+
+fig.suptitle(
+    "Parámetro " + r"$\omega_0$" + " en modelo wCDM", fontsize=20, fontweight="bold"
+)
+plt.show()
+# plt.close(fig)
