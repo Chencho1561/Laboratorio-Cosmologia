@@ -15,12 +15,25 @@ NEGRITA = "\033[1m"
 RESET = "\033[0m"
 SUBRAYADO = "\033[4m"
 
+
 # 1. Configuración de rutas (Ruta relativa automática)
-# Detecta dónde está el script actual
-base_dir = os.path.dirname(os.path.abspath(__file__))
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS  # carpeta temporal de PyInstaller
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
+
+base_dir = (
+    os.path.dirname(os.path.abspath(sys.executable))
+    if getattr(sys, "frozen", False)
+    else os.path.dirname(os.path.abspath(__file__))
+)
 # Entra en la carpeta 'Datos' que mencionaste
-data_dir = os.path.join(base_dir, "Datos")
-results_dir = os.path.join(base_dir, "Resultados")
+data_dir = resource_path("Datos_Cosmologia_SNIa")
+results_dir = os.path.join(base_dir, "Resultados_Cosmologia_SNIa")
 os.makedirs(results_dir, exist_ok=True)
 
 # Definimos los nombres de los archivos
@@ -381,7 +394,7 @@ print(
 print(
     "\nRepresentamos en un gráfico los contornos a uno, dos y tres sigmas junto al valor de mejor ajuste, y los resultados del apartado anterior."
 )
-sleep(1)
+print("\nEsto puede tardar unos segundos ...")
 h_grid = np.linspace(h_min_1 - 0.05, h_min_1 + 0.015, 50)
 w0_grid = np.linspace(w_min_2 - 0.5, w_min_2 + 0.5, 50)
 hh, ww = np.meshgrid(h_grid, w0_grid)
@@ -569,7 +582,7 @@ print(
 print(
     "\nRepresentamos en un gráfico los contornos a uno, dos y tres sigmas junto al valor de mejor ajuste para el modelo w0waCDM."
 )
-sleep(1)
+print("\nEsto puede tardar unos segundos ...")
 # Creamos la malla para w_0 y w_a
 w0_grid = np.linspace(w_0_min_3 - 0.5, w_0_min_3 + 0.5, 50)
 wa_grid = np.linspace(w_a_min_3 - 3.0, w_a_min_3 + 3.0, 50)
@@ -667,7 +680,7 @@ print(
 w0_LambdaCDM = -1.0
 wa_LambdaCDM = 0.0
 print(f"\nUtilizando el modelo cosmológico estándar (LambdaCDM) obtenemos:")
-print(f"w_0 = {w0_LambdaCDM:.4f} y w_a = {wa_LambdaCDM:.4f}.")
+print(f"\nw_0 = {w0_LambdaCDM:.4f} y w_a = {wa_LambdaCDM:.4f}.")
 print(
     f"\nEl error relativo para w_0 en el modelo LambdaCDM es del {error(theo=w0_LambdaCDM, exp=w_0_min_3):.4f} %."
 )
@@ -678,9 +691,9 @@ print(
 w0_DESI_CMB = -0.42
 wa_DESI_CMB = -1.75
 print(
-    "\n Utilizando los resultados del modelo DESI DR2 BAO (w0=-0.48 +0.35/-0.17 y wa < -1.34) junto al fondo cósmico de microondas (CMB) obtenemos:"
+    "\nUtilizando los resultados del modelo DESI DR2 BAO (w0=-0.48 +0.35/-0.17 y wa < -1.34) junto al fondo cósmico de microondas (CMB) obtenemos:"
 )
-print("   w_0 = -0.42 ± 0.21 y w_a = -1.75 ± 0.58.")
+print("\nw_0 = -0.42 ± 0.21 y w_a = -1.75 ± 0.58.")
 print(
     f"\nEl error relativo para w_0 en el modelo DESI DR2 CMB es del {error(theo=w0_DESI_CMB, exp=w_0_min_3):.4f} %."
 )
@@ -694,7 +707,7 @@ print(
 w0_DESI_CMB_PANTHEON = -0.838
 wa_DESI_CMB_PANTHEON = -0.62
 print(
-    f"{SUBRAYADO}Catálogo PantheonSH0ES:{RESET} w_0 = {w0_DESI_CMB_PANTHEON:.4f} y w_a = {wa_DESI_CMB_PANTHEON:.4f}."
+    f"\n{SUBRAYADO}Catálogo PantheonSH0ES:{RESET} \nw_0 = {w0_DESI_CMB_PANTHEON:.4f} y w_a = {wa_DESI_CMB_PANTHEON:.4f}."
 )
 print(
     f"\nEl error relativo para w_0 en el modelo DESI DR2 CMB + PantheonSH0ES es del {error(theo=w0_DESI_CMB_PANTHEON, exp=w_0_min_3):.4f} %."
@@ -705,7 +718,7 @@ print(
 w0_DESI_CMB_UNION3 = -0.667
 wa_DESI_CMB_UNION3 = -1.09
 print(
-    f"{SUBRAYADO}Catálogo Union3:{RESET} w_0 = {w0_DESI_CMB_UNION3:.4f} y w_a = {wa_DESI_CMB_UNION3:.4f}."
+    f"\n{SUBRAYADO}Catálogo Union3:{RESET} \nw_0 = {w0_DESI_CMB_UNION3:.4f} y w_a = {wa_DESI_CMB_UNION3:.4f}."
 )
 print(
     f"\nEl error relativo para w_0 en el modelo DESI DR2 CMB + Union3 es del {error(theo=w0_DESI_CMB_UNION3, exp=w_0_min_3):.4f} %."
@@ -716,7 +729,7 @@ print(
 w0_DESI_CMB_DESY5 = -0.752
 wa_DESI_CMB_DESY5 = -0.86
 print(
-    f"{SUBRAYADO}Catálogo DESY5:{RESET} w_0 = {w0_DESI_CMB_DESY5:.4f} y w_a = {wa_DESI_CMB_DESY5:.4f}."
+    f"\n{SUBRAYADO}Catálogo DESY5:{RESET} \nw_0 = {w0_DESI_CMB_DESY5:.4f} y w_a = {wa_DESI_CMB_DESY5:.4f}."
 )
 print(
     f"\nEl error relativo para w_0 en el modelo DESI DR2 CMB + DESY5 es del {error(theo=w0_DESI_CMB_DESY5, exp=w_0_min_3):.4f} %."
