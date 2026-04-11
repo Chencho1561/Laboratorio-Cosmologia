@@ -326,7 +326,7 @@ ax.axis([x_min, x_max, y_min, y_max])
 ax.axes.xaxis.set_label_text("Redshift " + r"$z$")
 ax.axes.yaxis.set_label_text("Módulo de distancia " + r"$\mu$")
 fig.suptitle(
-    "Modulo de distancia en función de el redshift " + r"$\mu(z)$",
+    "Módulo de distancia en función del redshift " + r"$\mu(z)$",
     fontsize=20,
     fontweight="bold",
 )
