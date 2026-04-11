@@ -23,3 +23,8 @@ conda install numpy matplotlib scipy
 ## 📀 Ejecutables/Releases
 Se adjuntan dos versiones (una para MacOS y otra para Windows) del script.
 De esta forma no es necesariio utilizar python ni ninguna de sus librerias directamente
+#### ⚠️Notas sobre el Antivirus
+Windows Defender suele ser muy agresivo con los archivos creados por PyInstaller. Si al intentar ejecutar el .exe en la carpeta dist el archivo desaparece o recibes un error de "Permisos", deberás añadir la carpeta a la lista de Exclusiones de tu antivirus para que funcione correctamente.
+
+A diferencia de Windows, macOS no borra archivos sospechosos, sino que Gatekeeper bloquea su ejecución por seguridad. Para abrirlo, puedes ir a Ajustes del Sistema > Privacidad y seguridad y seleccionar "Abrir de todos modos". Un método más rápido es hacer Control + Clic sobre el archivo en el Finder y elegir "Abrir" para forzar la excepción. Si el error persiste, usa el comando xattr -d com.apple.quarantine en la Terminal para eliminar el atributo de cuarentena. Ten paciencia, ya que el primer inicio con librerías de Python puede tardar unos segundos extra.
+
